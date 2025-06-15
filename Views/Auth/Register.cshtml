@@ -1,0 +1,27 @@
+@{
+    ViewData["Title"] = "Регистрация";
+    Layout = "_Layout";
+}
+
+<h2>Регистрация</h2>
+
+<form method="post" asp-controller="Auth" asp-action="Register">
+    <div class="mb-3">
+        <label for="username">Логин</label>
+        <input type="text" name="username" id="username" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label for="password">Пароль</label>
+        <input type="password" name="password" id="password" class="form-control" required />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+</form>
+
+@if (!string.IsNullOrEmpty(ViewBag.Error as string))
+{
+    <div class="alert alert-danger mt-3">
+        @ViewBag.Error
+    </div>
+}

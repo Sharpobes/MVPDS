@@ -1,0 +1,32 @@
+@model MVPDS.Entities.VoiceServer
+@{
+    ViewData["Title"] = "Сервер: " + Model.ServerName;
+    Layout = "_Layout";
+}
+
+<h2>@Model.ServerName</h2>
+<input type="hidden" id="current-username" value="@User.Identity?.Name" />
+
+@foreach (var channel in Model.VoiceChannels)
+{
+    <div class="channel-card" id="channel-@channel.VoiceChannelsId">
+        <h4>@channel.Name</h4>
+        <button id="join-btn-@channel.VoiceChannelsId" onclick="connectToChannel(@channel.VoiceChannelsId)">Присоединиться</button>
+        <button onclick="startRecording()">Говорить</button>
+        <ul class="user-list" id="users-@channel.VoiceChannelsId"></ul>
+        <div id="mic-indicator-@channel.VoiceChannelsId" style="display: none;" class="mic-indicator">
+            Вы говорите...
+        </div>
+    </div>
+    <hr />
+}
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script src="~/js/Channels.js"></script>
+    <script src="~/js/mediainterop.js"></script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Channels.css" />
+}
