@@ -37,12 +37,18 @@
                 <div class="chat-message">
                     <strong>@msg.UserName:</strong> @msg.Chat_Message
                     <span class="timestamp">(@msg.Timestamp_Message.ToLocalTime().ToString("g"))</span>
+
+                    <form asp-action="DeleteMessage" asp-controller="Chat" method="post" class="d-inline float-right" onsubmit="return confirm('Удалить сообщение?');">
+                        <input type="hidden" name="messageId" value="@msg.Id" />
+                        <input type="hidden" name="serverId" value="@Model.Server.VoiceServersId" />
+                        <button type="submit" class="btn btn-sm btn-outline-danger">🗑</button>
+                    </form>
                 </div>
             }
         </div>
     }
 
-    <form asp-action="SendMessage" asp-controller="Chat" method="post" class="chat-form">
+    <form asp-action="SendMessage" asp-controller="Chat" method="post" class="chat-form mt-2">
         <input type="hidden" name="serverId" value="@Model.Server.VoiceServersId" />
         <input type="text" name="message" placeholder="Введите сообщение..." required class="chat-input" />
         <button type="submit" class="chat-send-btn">Отправить</button>
@@ -54,7 +60,14 @@
 @foreach (var channel in Model.Server.VoiceChannels)
 {
     <div class="channel-card" id="channel-@channel.VoiceChannelsId">
-        <h4>@channel.Name</h4>
+        <h4>
+            @channel.Name
+            <form asp-action="DeleteVoiceChannel" asp-controller="Voice" method="post" class="d-inline float-right" onsubmit="return confirm('Удалить канал?');">
+                <input type="hidden" name="channelId" value="@channel.VoiceChannelsId" />
+                <button type="submit" class="btn btn-sm btn-outline-danger">🗑 Удалить</button>
+            </form>
+        </h4>
+
         <button id="join-btn-@channel.VoiceChannelsId" onclick="connectToChannel(@channel.VoiceChannelsId)">Присоединиться</button>
         <button onclick="startRecording()">Говорить</button>
 

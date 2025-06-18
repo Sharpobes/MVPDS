@@ -30,6 +30,11 @@ else
             <li>
                 <strong>@server.ServerName</strong>
                 <a asp-controller="Voice" asp-action="Channels" asp-route-id="@server.VoiceServersId" class="btn btn-sm btn-outline-primary ml-2">Открыть</a>
+
+                <form asp-action="DeleteServer" asp-controller="Voice" method="post" class="d-inline ml-2" onsubmit="return confirm('Удалить сервер?');">
+                    <input type="hidden" name="serverId" value="@server.VoiceServersId" />
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+                </form>
             </li>
         }
     </ul>

@@ -91,6 +91,46 @@ namespace MVPDS.Controllers
             return RedirectToAction("Servers");
         }
 
+        [HttpPost]
+        public async Task<IActionResult> DeleteVoiceChannel(int channelId)
+        {
+            var channel = await _db.VoiceChannels.FindAsync(channelId);
+            if (channel == null)
+                return NotFound();
+
+            int serverId = channel.ServerId;
+
+            _db.VoiceChannels.Remove(channel);
+            await _db.SaveChangesAsync();
+
+            return RedirectToAction("Channels", new { id = serverId });
+        }
+        [HttpPost]
+        public async Task<IActionResult> DeleteServer(int serverId)
+        {
+            var server = await _db.VoiceServers
+                .Include(s => s.VoiceChannels)
+                .ThenInclude(c => c.VoiceChannelMembers)
+                .Include(s => s.ChatMessages)
+                .FirstOrDefaultAsync(s => s.VoiceServersId == serverId);
+
+            if (server == null)
+                return NotFound();
+
+            _db.ChatMessages.RemoveRange(server.ChatMessages);
+
+            foreach (var channel in server.VoiceChannels)
+            {
+                _db.VoiceChannelMembers.RemoveRange(channel.VoiceChannelMembers);
+            }
+
+            _db.VoiceChannels.RemoveRange(server.VoiceChannels);
+            _db.VoiceServers.Remove(server);
+
+            await _db.SaveChangesAsync();
+
+            return RedirectToAction("Servers");
+        }
 
 
         [HttpPost]
