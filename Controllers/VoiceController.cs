@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MVPDS.Entities;
-
+using MVPDS.Models;
 namespace MVPDS.Controllers
 {
     [Authorize]
@@ -13,6 +13,26 @@ namespace MVPDS.Controllers
         public VoiceController(MvpdsContext db)
         {
             _db = db;
+        }
+        [HttpPost]
+        public async Task<IActionResult> CreateVoiceChannel(int serverId, string channelName)
+        {
+            if (string.IsNullOrWhiteSpace(channelName))
+            {
+                TempData["Error"] = "Название канала не может быть пустым.";
+                return RedirectToAction("Channels", new { id = serverId });
+            }
+
+            var channel = new VoiceChannel
+            {
+                ServerId = serverId,
+                Name = channelName
+            };
+
+            _db.VoiceChannels.Add(channel);
+            await _db.SaveChangesAsync();
+
+            return RedirectToAction("Channels", new { id = serverId });
         }
 
         public async Task<IActionResult> Servers()
@@ -26,11 +46,51 @@ namespace MVPDS.Controllers
                 .Where(s =>
                     s.OwnerId == userId ||
                     s.VoiceChannels.Any(c => c.VoiceChannelMembers.Any(m => m.UserId == userId)))
-                .Distinct()
                 .ToListAsync();
 
-            return View(servers);
+            return View("Servers", servers);
         }
+        [HttpPost]
+        public async Task<IActionResult> CreateServer(string newServerName)
+        {
+            var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
+
+            if (string.IsNullOrWhiteSpace(newServerName))
+            {
+                TempData["Error"] = "Название сервера не может быть пустым.";
+                return RedirectToAction("Servers");
+            }
+
+            var server = new VoiceServer
+            {
+                ServerName = newServerName,
+                OwnerId = userId
+            };
+
+            _db.VoiceServers.Add(server);
+            await _db.SaveChangesAsync();
+
+            var defaultChannel = new VoiceChannel
+            {
+                Name = "Общий",
+                ServerId = server.VoiceServersId
+            };
+
+            _db.VoiceChannels.Add(defaultChannel);
+            await _db.SaveChangesAsync();
+
+            _db.VoiceChannelMembers.Add(new VoiceChannelMember
+            {
+                UserId = userId,
+                ChannelId = defaultChannel.VoiceChannelsId,
+                JoinedAt = DateTime.Now
+            });
+
+            await _db.SaveChangesAsync();
+
+            return RedirectToAction("Servers");
+        }
+
 
 
         [HttpPost]
@@ -76,13 +136,25 @@ namespace MVPDS.Controllers
         {
             var server = await _db.VoiceServers
                 .Include(s => s.VoiceChannels)
+                .ThenInclude(vc => vc.VoiceChannelMembers)
                 .FirstOrDefaultAsync(s => s.VoiceServersId == id);
 
             if (server == null)
                 return NotFound();
 
-            return View(server);
+            var chatMessages = await _db.ChatMessages
+                .Where(m => m.VoiceServers_Id == id)
+                .ToListAsync();
+
+            var model = new ServerViewModel
+            {
+                Server = server,
+                ChatMessages = chatMessages
+            };
+
+            return View("Channels", model); // ✅ Channels.cshtml ожидает ServerViewModel
         }
+
 
         public async Task<IActionResult> Channel(int id)
         {

@@ -30,6 +30,29 @@ public class ChatController : Controller
         _context.ChatMessages.Add(chatMessage);
         await _context.SaveChangesAsync();
 
-        return RedirectToAction("Details", "Servers", new { id = serverId });
+        return RedirectToAction("Channels", "Voice", new { id = serverId });
     }
+    [HttpPost]
+    public async Task<IActionResult> CreateChatMessage(int serverId, string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            TempData["Error"] = "Сообщение не может быть пустым.";
+            return RedirectToAction("Channels", "Voice", new { id = serverId });
+        }
+
+        var chatMessage = new ChatMessage
+        {
+            VoiceServers_Id = serverId,
+            UserName = User.Identity?.Name ?? "Аноним",
+            Chat_Message = message,
+            Timestamp_Message = DateTime.UtcNow
+        };
+
+        _context.ChatMessages.Add(chatMessage);
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Channels", "Voice", new { id = serverId });
+    }
+
 }

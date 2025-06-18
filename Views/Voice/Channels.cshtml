@@ -1,19 +1,65 @@
-@model MVPDS.Entities.VoiceServer
+@model ServerViewModel
 @{
-    ViewData["Title"] = "Сервер: " + Model.ServerName;
+    ViewData["Title"] = "Сервер: " + Model.Server.ServerName;
     Layout = "_Layout";
 }
 
-<h2>@Model.ServerName</h2>
-<input type="hidden" id="current-username" value="@User.Identity?.Name" />
+<h2>@Model.Server.ServerName</h2>
 
-@foreach (var channel in Model.VoiceChannels)
+<div class="server-controls mb-4">
+    <form asp-action="CreateVoiceChannel" asp-controller="Voice" method="post" class="d-inline-block mr-3">
+        <input type="hidden" name="serverId" value="@Model.Server.VoiceServersId" />
+        <input type="text" name="channelName" placeholder="Название канала" required class="form-control d-inline w-auto" />
+        <button type="submit" class="btn btn-outline-success">Создать голосовой канал</button>
+    </form>
+
+    <form asp-action="CreateChatMessage" asp-controller="Chat" method="post" class="d-inline-block">
+        <input type="hidden" name="serverId" value="@Model.Server.VoiceServersId" />
+        <input type="text" name="message" placeholder="Сообщение для чата" required class="form-control d-inline w-auto" />
+        <button type="submit" class="btn btn-outline-primary">Создать сообщение</button>
+    </form>
+</div>
+
+<div class="server-chat">
+    <h3>💬 Общий чат</h3>
+
+    @if (Model.ChatMessages?.Any() != true)
+    {
+        <div class="chat-window empty">
+            <p class="text-muted">Откройте или создайте чат.</p>
+        </div>
+    }
+    else
+    {
+        <div class="chat-window" id="chat-window">
+            @foreach (var msg in Model.ChatMessages.OrderBy(m => m.Timestamp_Message))
+            {
+                <div class="chat-message">
+                    <strong>@msg.UserName:</strong> @msg.Chat_Message
+                    <span class="timestamp">(@msg.Timestamp_Message.ToLocalTime().ToString("g"))</span>
+                </div>
+            }
+        </div>
+    }
+
+    <form asp-action="SendMessage" asp-controller="Chat" method="post" class="chat-form">
+        <input type="hidden" name="serverId" value="@Model.Server.VoiceServersId" />
+        <input type="text" name="message" placeholder="Введите сообщение..." required class="chat-input" />
+        <button type="submit" class="chat-send-btn">Отправить</button>
+    </form>
+</div>
+
+<hr />
+
+@foreach (var channel in Model.Server.VoiceChannels)
 {
     <div class="channel-card" id="channel-@channel.VoiceChannelsId">
         <h4>@channel.Name</h4>
         <button id="join-btn-@channel.VoiceChannelsId" onclick="connectToChannel(@channel.VoiceChannelsId)">Присоединиться</button>
         <button onclick="startRecording()">Говорить</button>
+
         <ul class="user-list" id="users-@channel.VoiceChannelsId"></ul>
+
         <div id="mic-indicator-@channel.VoiceChannelsId" style="display: none;" class="mic-indicator">
             Вы говорите...
         </div>
