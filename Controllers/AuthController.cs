@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MVPDS.Entities;
+using MVPDS.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+
 [AllowAnonymous]
 [Route("[controller]")]
 public class AuthController : Controller
@@ -15,22 +17,23 @@ public class AuthController : Controller
     {
         _db = db;
     }
-    [AllowAnonymous]
+
     [HttpGet("login")]
     public IActionResult Login() => View();
-    
+
     [HttpGet("register")]
-    [AllowAnonymous]
     public IActionResult Register() => View();
-    
+
     [HttpPost("login")]
     public async Task<IActionResult> Login(string username, string password)
     {
-        var user = await _db.VoiceUsers
-            .FirstOrDefaultAsync(u => u.Username == username && u.UserPassword == password);
+        var user = await _db.VoiceUsers.FirstOrDefaultAsync(u => u.Username == username);
 
         if (user == null)
-            return Unauthorized("Неверный логин или пароль");
+        {
+            TempData["LoginError"] = "Неверный логин или пароль";
+            return RedirectToAction("Login");
+        }
 
         var claims = new List<Claim>
         {
@@ -59,19 +62,28 @@ public class AuthController : Controller
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToAction("Login", "Auth");
     }
-    
-    [AllowAnonymous]
+
     [HttpPost("register")]
     public async Task<IActionResult> Register(string username, string password)
     {
         if (await _db.VoiceUsers.AnyAsync(u => u.Username == username))
-            return BadRequest("Пользователь уже существует");
+        {
+            TempData["RegisterError"] = "Пользователь уже существует";
+            return RedirectToAction("Register");
+        }
+        if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
+        {
+            TempData["RegisterError"] = "Пароль должен содержать минимум 6 символов.";
+            return RedirectToAction("Register");
+        }
+        var hashedPassword = PasswordHasher.HashPassword(password);
 
         var user = new VoiceUser
         {
             Username = username,
-            UserPassword = password
+            UserPassword = hashedPassword
         };
+
         _db.VoiceUsers.Add(user);
         await _db.SaveChangesAsync();
 

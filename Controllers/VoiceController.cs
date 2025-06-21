@@ -51,7 +51,7 @@ namespace MVPDS.Controllers
             return View("Servers", servers);
         }
         [HttpPost]
-        public async Task<IActionResult> CreateServer(string newServerName)
+        private async Task<IActionResult> CreateServer(string newServerName)
         {
             var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
 
@@ -134,7 +134,7 @@ namespace MVPDS.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> JoinServer(string serverName)
+        private async Task<IActionResult> JoinServer(string serverName)
         {
             var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
     
@@ -192,7 +192,7 @@ namespace MVPDS.Controllers
                 ChatMessages = chatMessages
             };
 
-            return View("Channels", model); // ✅ Channels.cshtml ожидает ServerViewModel
+            return View("Channels", model);
         }
 
 
@@ -211,6 +211,26 @@ namespace MVPDS.Controllers
 
             return View();
         }
+        [HttpPost]
+        public async Task<IActionResult> HandleServerAction(string serverName, string actionType)
+        {
+            if (string.IsNullOrWhiteSpace(serverName))
+            {
+                TempData["Error"] = "Название сервера не может быть пустым.";
+                return RedirectToAction("Servers");
+            }
 
+            if (actionType == "join")
+            {
+                return await JoinServer(serverName);
+            }
+            else if (actionType == "create")
+            {
+                return await CreateServer(serverName);
+            }
+
+            TempData["Error"] = "Неизвестное действие.";
+            return RedirectToAction("Servers");
+        }
     }
 }

@@ -12,28 +12,33 @@
 <body>
 <header>
     <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-        <div class="container-fluid">
+        <div class="container d-flex justify-content-center position-relative">
             <a class="navbar-brand" asp-area="" asp-controller="Voice" asp-action="Servers">MVPDS</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                     aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    
-                </ul>
+            <div class="collapse navbar-collapse justify-content-center" id="navbarSupportedContent">
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="Voice" asp-action="Servers">Серверы</a>
+                        </li>
+                    </ul>
+                }
             </div>
+            @if (User.Identity.IsAuthenticated)
+            {
+                <form method="post" asp-controller="Auth" asp-action="Logout" class="position-absolute end-0 d-inline-block me-3">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Выйти</button>
+                </form>
+            }
         </div>
-        @if (User.Identity.IsAuthenticated)
-        {
-            <form method="post" asp-controller="Auth" asp-action="Logout" class="d-inline">
-                <button type="submit" class="btn btn-outline-danger btn-sm">Выйти</button>
-            </form>
-        }
     </nav>
 </header>
-<div class="container">
-    <main role="main" class="pb-3">
+<div class="container d-flex justify-content-center">
+    <main role="main" class="pb-3" style="max-width: 800px; width: 100%;">
         @RenderBody()
     </main>
 </div>

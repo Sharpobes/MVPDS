@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using MVPDS.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using MVPDS.Services;
 namespace MVPDS.Controllers;
 
 public class ChatController : Controller
@@ -12,18 +13,23 @@ public class ChatController : Controller
     {
         _context = context;
     }
-
+    
     [HttpPost]
     public async Task<IActionResult> SendMessage(int serverId, string message)
     {
         if (string.IsNullOrWhiteSpace(message))
-            return RedirectToAction("Details", "Servers", new { id = serverId });
+        {
+            TempData["Error"] = "Сообщение не может быть пустым.";
+            return RedirectToAction("Channels", "Voice", new { id = serverId });
+        }
+
+        var encryptedMessage = AesEncryptionService.Encrypt(message);
 
         var chatMessage = new ChatMessage
         {
             VoiceServers_Id = serverId,
-            UserName = User.Identity?.Name,
-            Chat_Message = message,
+            UserName = User.Identity?.Name ?? "Аноним",
+            Chat_Message = encryptedMessage,
             Timestamp_Message = DateTime.UtcNow
         };
 
@@ -32,24 +38,19 @@ public class ChatController : Controller
 
         return RedirectToAction("Channels", "Voice", new { id = serverId });
     }
+
     [HttpPost]
-    public async Task<IActionResult> CreateChatMessage(int serverId, string message)
+    public async Task<IActionResult> DeleteMessage(int messageId, int serverId)
     {
-        if (string.IsNullOrWhiteSpace(message))
+        var message = await _context.ChatMessages.FindAsync(messageId);
+
+        if (message == null)
         {
-            TempData["Error"] = "Сообщение не может быть пустым.";
+            TempData["Error"] = "Сообщение не найдено.";
             return RedirectToAction("Channels", "Voice", new { id = serverId });
         }
 
-        var chatMessage = new ChatMessage
-        {
-            VoiceServers_Id = serverId,
-            UserName = User.Identity?.Name ?? "Аноним",
-            Chat_Message = message,
-            Timestamp_Message = DateTime.UtcNow
-        };
-
-        _context.ChatMessages.Add(chatMessage);
+        _context.ChatMessages.Remove(message);
         await _context.SaveChangesAsync();
 
         return RedirectToAction("Channels", "Voice", new { id = serverId });

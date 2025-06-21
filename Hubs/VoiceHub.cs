@@ -89,7 +89,7 @@ namespace MVPDS.Services
                 Console.WriteLine($"[Hub] Получено аудио ({audioData.Length} байт) от {Context.User?.Identity?.Name} в канал {channelId}");
 
                 await Clients.OthersInGroup(channelId)
-                    .SendAsync("ReceiveAudio", Context.ConnectionId, base64Audio); // или audioData если принимающая сторона умеет
+                    .SendAsync("ReceiveAudio", Context.ConnectionId, base64Audio);
             }
             catch (Exception ex)
             {

@@ -12,12 +12,6 @@
         <input type="text" name="channelName" placeholder="Название канала" required class="form-control d-inline w-auto" />
         <button type="submit" class="btn btn-outline-success">Создать голосовой канал</button>
     </form>
-
-    <form asp-action="CreateChatMessage" asp-controller="Chat" method="post" class="d-inline-block">
-        <input type="hidden" name="serverId" value="@Model.Server.VoiceServersId" />
-        <input type="text" name="message" placeholder="Сообщение для чата" required class="form-control d-inline w-auto" />
-        <button type="submit" class="btn btn-outline-primary">Создать сообщение</button>
-    </form>
 </div>
 
 <div class="server-chat">
@@ -35,17 +29,21 @@
             @foreach (var msg in Model.ChatMessages.OrderBy(m => m.Timestamp_Message))
             {
                 <div class="chat-message">
-                    <strong>@msg.UserName:</strong> @msg.Chat_Message
+                    <strong>@msg.UserName:</strong> @MVPDS.Services.AesEncryptionService.Decrypt(msg.Chat_Message)
                     <span class="timestamp">(@msg.Timestamp_Message.ToLocalTime().ToString("g"))</span>
 
-                    <form asp-action="DeleteMessage" asp-controller="Chat" method="post" class="d-inline float-right" onsubmit="return confirm('Удалить сообщение?');">
-                        <input type="hidden" name="messageId" value="@msg.Id" />
-                        <input type="hidden" name="serverId" value="@Model.Server.VoiceServersId" />
-                        <button type="submit" class="btn btn-sm btn-outline-danger">🗑</button>
-                    </form>
+                    @if (msg.UserName == User.Identity?.Name)
+                    {
+                        <form asp-action="DeleteMessage" asp-controller="Chat" method="post" class="d-inline float-right" onsubmit="return confirm('Удалить сообщение?');">
+                            <input type="hidden" name="messageId" value="@msg.Id" />
+                            <input type="hidden" name="serverId" value="@Model.Server.VoiceServersId" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">🗑</button>
+                        </form>
+                    }
                 </div>
             }
         </div>
+
     }
 
     <form asp-action="SendMessage" asp-controller="Chat" method="post" class="chat-form mt-2">

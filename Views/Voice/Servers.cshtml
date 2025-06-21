@@ -6,17 +6,12 @@
 
 <h2>Серверы</h2>
 
-<div class="mb-3">
-    <form method="post" asp-action="JoinServer" asp-controller="Voice" class="d-inline">
-        <input type="text" name="serverName" placeholder="Введите название сервера" required class="form-control d-inline w-auto" />
-        <button type="submit" class="btn btn-primary">Подключиться</button>
-    </form>
-
-    <form method="post" asp-action="CreateServer" asp-controller="Voice" class="d-inline ml-2">
-        <input type="text" name="newServerName" placeholder="Новый сервер" required class="form-control d-inline w-auto" />
-        <button type="submit" class="btn btn-success">Создать сервер</button>
-    </form>
-</div>
+<form method="post" asp-action="HandleServerAction" asp-controller="Voice" class="mb-3">
+    <input type="text" name="serverName" placeholder="Название сервера" required class="form-control d-inline w-auto" />
+    
+    <button type="submit" name="actionType" value="join" class="btn btn-primary ml-1">Подключиться</button>
+    <button type="submit" name="actionType" value="create" class="btn btn-success ml-1">Создать сервер</button>
+</form>
 
 @if (Model == null || !Model.Any())
 {
