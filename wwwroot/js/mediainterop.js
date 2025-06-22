@@ -119,5 +119,3 @@ async function playAudio(base64Audio) {
         console.error("[Voice] Ошибка в playAudio:", error);
     }
 }
-
-

@@ -3,6 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using MVPDS.Entities;
 using MVPDS.Services;
+using MVPDS.Repositories;
+using MediatR;
+using MVPDS.Commands;
+using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
 
 
@@ -10,7 +14,14 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient();
 builder.Services.AddDbContext<MvpdsContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(CreateServerCommand).Assembly);
+});
+builder.Services.AddScoped<IVoiceServerRepository, VoiceServerRepository>();
+builder.Services.AddScoped<IVoiceChannelRepository, VoiceChannelRepository>();
+builder.Services.AddScoped<IVoiceChannelMemberRepository, VoiceChannelMemberRepository>();
+builder.Services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
