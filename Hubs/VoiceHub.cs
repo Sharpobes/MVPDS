@@ -30,7 +30,7 @@ namespace MVPDS.Services
                     users.Add(username);
                     return users;
                 });
-
+            await Clients.Caller.SendAsync("UserConnected", channelId);
             await SendUsersList(channelId);
         }
 
@@ -51,6 +51,7 @@ namespace MVPDS.Services
             }
 
             _userChannelMap.TryRemove(connectionId, out _);
+            await Clients.Caller.SendAsync("UserDisconnected", channelId);
             await SendUsersList(channelId);
         }
 

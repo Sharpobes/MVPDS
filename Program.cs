@@ -48,6 +48,11 @@ builder.Services.AddCors(options =>
             .SetIsOriginAllowed(_ => true);
     });
 });
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.AllowAlternateSchemes = true;
+});
+builder.WebHost.UseUrls("http://*:61281");
 
 builder.Services.AddSignalR(options =>
     {
@@ -70,7 +75,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseCors();
 app.UseRouting();

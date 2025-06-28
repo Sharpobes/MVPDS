@@ -67,7 +67,8 @@
         </h4>
 
         <button id="join-btn-@channel.VoiceChannelsId" onclick="connectToChannel(@channel.VoiceChannelsId)">Присоединиться</button>
-        <button onclick="startRecording()">Говорить</button>
+        <button id="talk-btn-@channel.VoiceChannelsId" style="display: none;" onclick="startRecording()">Говорить</button>
+        <button id="disconnect-btn-@channel.VoiceChannelsId" style="display: none;" onclick="disconnectFromChannel(@channel.VoiceChannelsId)">Отключиться</button>
 
         <ul class="user-list" id="users-@channel.VoiceChannelsId"></ul>
 

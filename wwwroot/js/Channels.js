@@ -1,4 +1,4 @@
-// Channels.js (финальная версия под base64)
+// Channels.js (исправленная версия)
 let currentChannelId = null;
 let currentUser = document.getElementById("current-username")?.value ?? "Аноним";
 
@@ -20,19 +20,37 @@ connection.on("UpdateUserList", function (channelId, users) {
     });
 });
 
+connection.on("UserConnected", function(channelId) {
+    console.log("[Voice] Подключен к каналу:", channelId);
+    if (parseInt(channelId) === currentChannelId) {
+        showChannelButtons(channelId);
+    }
+});
+
+connection.on("UserDisconnected", function(channelId) {
+    console.log("[Voice] Отключен от канала:", channelId);
+    hideChannelButtons(channelId);
+    if (parseInt(channelId) === currentChannelId) {
+        currentChannelId = null;
+    }
+});
+
 connection.on("ReceiveAudio", async (senderId, base64Audio) => {
     await playAudio(base64Audio);
 });
 
 async function connectToChannel(channelId) {
+    // Отключаемся от предыдущего канала
     if (currentChannelId && currentChannelId !== channelId) {
         await disconnectFromChannel(currentChannelId);
+        hideChannelButtons(currentChannelId);
         const oldList = document.getElementById("users-" + currentChannelId);
         if (oldList) oldList.innerHTML = "";
     }
 
     currentChannelId = channelId;
 
+    // Подключаемся к SignalR если не подключены
     if (connection.state !== "Connected") {
         try {
             await connection.start();
@@ -43,27 +61,44 @@ async function connectToChannel(channelId) {
         }
     }
 
-    await connection.invoke("JoinChannel", channelId.toString());
-    console.log("[Voice] Присоединение к каналу:", channelId);
-    highlightActiveChannel(channelId);
+    try {
+        await connection.invoke("JoinChannel", channelId.toString());
+        console.log("[Voice] Присоединение к каналу:", channelId);
+        // НЕ показываем кнопки здесь - ждем события UserConnected
+        highlightActiveChannel(channelId);
+    } catch (err) {
+        console.error("[Voice ERROR] Ошибка подключения:", err);
+        currentChannelId = null;
+    }
 }
 
 async function disconnectFromChannel(channelId) {
     if (connection && connection.state === "Connected") {
-        await connection.invoke("LeaveChannel", channelId.toString());
+        try {
+            await connection.invoke("LeaveChannel", channelId.toString());
+            console.log("[Voice] Отключение от канала:", channelId);
+        } catch (err) {
+            console.error("[Voice ERROR] Ошибка отключения:", err);
+        }
     }
-    hideMicIndicator();
+
+    hideChannelButtons(channelId);
+    hideMicIndicator(channelId);
+
+    if (currentChannelId === channelId) {
+        currentChannelId = null;
+    }
 }
 
 async function startRecording() {
-    highlightUserSpeaking(currentChannelId, currentUser);
-    showMicIndicator();
-    console.log("[Voice] Запуск записи для канала:", currentChannelId);
-
     if (!currentChannelId) {
         console.error("[Voice ERROR] Не выбран канал для записи");
         return;
     }
+
+    highlightUserSpeaking(currentChannelId, currentUser);
+    showMicIndicator(currentChannelId);
+    console.log("[Voice] Запуск записи для канала:", currentChannelId);
 
     startAudioRecording(async (base64String) => {
         console.log("[Voice] 🎧 Отправка аудио, размер base64:", base64String.length);
@@ -76,15 +111,15 @@ async function startRecording() {
             await connection.invoke("SendAudio", currentChannelId.toString(), base64String);
         } catch (err) {
             console.error("[Voice ERROR] SendAudio error:", err);
-            console.error("[Voice ERROR] Детали ошибки:", err.message);
         }
     });
 }
 
-
 function stopRecording() {
     stopAudioRecording();
-    hideMicIndicator();
+    if (currentChannelId) {
+        hideMicIndicator(currentChannelId);
+    }
     document.querySelectorAll("li.speaking").forEach(li => li.classList.remove("speaking"));
 }
 
@@ -122,12 +157,33 @@ function intToRGB(i) {
     return ((i & 0x00FFFFFF).toString(16).toUpperCase()).padStart(6, '0');
 }
 
-function showMicIndicator() {
-    const indicator = document.getElementById("mic-indicator");
+function showMicIndicator(channelId) {
+    if (!channelId) channelId = currentChannelId;
+    const indicator = document.getElementById(`mic-indicator-${channelId}`);
     if (indicator) indicator.style.display = "block";
 }
 
-function hideMicIndicator() {
-    const indicator = document.getElementById("mic-indicator");
+function hideMicIndicator(channelId) {
+    if (!channelId) channelId = currentChannelId;
+    const indicator = document.getElementById(`mic-indicator-${channelId}`);
     if (indicator) indicator.style.display = "none";
 }
+
+function showChannelButtons(channelId) {
+    document.getElementById(`talk-btn-${channelId}`).style.display = 'inline-block';
+    document.getElementById(`disconnect-btn-${channelId}`).style.display = 'inline-block';
+}
+
+function hideChannelButtons(channelId) {
+    document.getElementById(`talk-btn-${channelId}`).style.display = 'none';
+    document.getElementById(`disconnect-btn-${channelId}`).style.display = 'none';
+}
+
+// Обработка разрыва соединения
+connection.onclose(async () => {
+    console.log("[Voice] Соединение потеряно");
+    if (currentChannelId) {
+        hideChannelButtons(currentChannelId);
+        currentChannelId = null;
+    }
+});
